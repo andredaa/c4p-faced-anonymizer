@@ -1,5 +1,7 @@
 Fork of https://github.com/iitzco/faced
 
+Execute example with faced --input flip.png --save
+
 # *faced*
 
 🚀 😏 CPU (Near) Real Time face detection
