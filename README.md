@@ -70,7 +70,10 @@ $ faced --input imgs/demo.mp4 --threshold 0.5
 See `faced --help` for more information.
 
 ## Examples
-
+<p float="left">
+  <img src="who_is_this.png" width="400" />
+  <img src="who_is_this.png" width="400" />
+</p>
 <p float="left">
   <img src="examples/arg-faced.png" width="400" />
   <img src="examples/gino-faced.png" width="400" />
