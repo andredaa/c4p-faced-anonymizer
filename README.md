@@ -11,7 +11,7 @@ Fork of https://github.com/iitzco/faced
 ## How to install
 
 ```bash
-$ pip install git+https://github.com/iitzco/faced.git
+$ pip install git+https://git.csl-intern.local.hcu-hamburg.de/cities4people/c4p-faced-anonymizer
 ```
 
 > Soon to be available on `PyPI`.
