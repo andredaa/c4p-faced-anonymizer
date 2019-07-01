@@ -36,7 +36,7 @@ class MyHandler(FileSystemEventHandler):
             bboxes = face_detector.predict(rgb_img)
         ann_img = annotate_image(img, bboxes)
         # overwrite original with anonymized version
-        cv2.imwrite(event.src_path, ann_img)
+        cv2.imwrite(path_to_file, ann_img)
 
 
 if __name__ == "__main__":
