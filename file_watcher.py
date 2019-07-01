@@ -10,9 +10,9 @@ import cv2
 from faced import FaceDetector
 from faced.utils import annotate_image
 
-cwd = os.path.dirname(os.path.abspath(__file__))
-watched_folder = '' # Please specify folder location
 
+cwd = os.path.dirname(os.path.abspath(__file__))
+watched_folder = '/var/nextcloud_data/c4p/files/camera_footage' # Please specify folder location
 
 class MyHandler(FileSystemEventHandler):
     # anonymize pictures, whenever there is a new picture in the wachtched folder
