@@ -15,12 +15,19 @@ class MyHandler(FileSystemEventHandler):
     # anonymize pictures, whenever there is a new picture in the wachtched folder
     def on_created(self, event):
         print(f'event type: {event.event_type}  path : {event.src_path}')
+
+        # the "on_created" event is called by a partially upload file
+        # cut excess filename after '.png'
+        #/var/nextcloud_data/c4p/files/camera_footage/Ko-retina.png.ocTransferId1983807786.part
+        seperator = '.png'
+        path_to_file = event.src_path.split(seperator, 1)[0] + seperator
+
         face_detector = FaceDetector()
 
         # Threshold for image analysis
         thresh = None
 
-        img = cv2.imread(event.src_path)
+        img = cv2.imread(path_to_file)
         rgb_img = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
 
         if thresh:
