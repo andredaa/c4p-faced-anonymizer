@@ -23,8 +23,8 @@ class MyHandler(FileSystemEventHandler):
             # the "on_created" event is called by a partially upload file
             # cut excess filename after '.png'
             #/var/nextcloud_data/c4p/files/camera_footage/Ko-retina.png.ocTransferId1983807786.part
-            seperator = '.png'
-            path_to_file = event.src_path.split(seperator, 1)[0] + seperator
+            filetype = '.png'
+            path_to_file = event.src_path.split(filetype, 1)[0]
             print("path to file", path_to_file)
 
             face_detector = FaceDetector()
@@ -33,7 +33,7 @@ class MyHandler(FileSystemEventHandler):
             thresh = None
 
             print("reading image")
-            img = cv2.imread(path_to_file)
+            img = cv2.imread(path_to_file + filetype)
             rgb_img = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
 
             if thresh:
@@ -41,16 +41,19 @@ class MyHandler(FileSystemEventHandler):
             else:
                 bboxes = face_detector.predict(rgb_img)
 
-            print("bboxes containing face", bboxes)
+            if not bboxes == []:
+                print("bboxes containing face", bboxes)
 
-            print("creating anonymous picture")
-            ann_img = annotate_image(img, bboxes)
+                print("creating anonymous picture")
+                ann_img = annotate_image(img, bboxes)
 
-            print("overwrite original with anonymized version")
-            cv2.imwrite(path_to_file, ann_img)
+                print("overwrite original with anonymized version")
+                cv2.imwrite(path_to_file + '_anonymous' + filetype, ann_img)
 
-            print("refreshing owncloud")
-            subprocess.call(cwd + "/refresh_nextcloud.sh", shell=True)
+                print("refreshing owncloud")
+                subprocess.call(cwd + "/refresh_nextcloud.sh", shell=True)
+            else:
+                print("no face found")
 
         except:
             print("Anonymizing failed")
