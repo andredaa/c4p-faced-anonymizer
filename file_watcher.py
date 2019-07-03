@@ -18,95 +18,90 @@ anonymous_folder = '/var/nextcloud_data/c4p/files/camera_footage/anonymous_foota
 thresh = None
 
 
-
-
 class MyHandler(FileSystemEventHandler):
     # anonymize pictures, whenever there is a new picture in the wachtched folder
     def on_created(self, event):
         print(f'event type: {event.event_type}  path : {event.src_path}')
-        time.sleep(2)
 
-        try:
-            # the "on_created" event is called by a partially upload file
-            # cut excess filename after '.png'
-            #/var/nextcloud_data/c4p/files/camera_footage/Ko-retina.png.ocTransferId1983807786.part
-            # /camera_footage/camera_1/raw_footage
-            # /camera_footage/camera_1/anonymized_footage
+        filetype = find_filetype(event.src_path)
+        print("filetype", filetype)
 
-            # todo : anonymizing more than 1 face
-            # todo : put face over face
+        # file creation event gets triggered by a .part file , example.png.ocTransferId1983807786.part
+        # split .part and hash from event path to get actual file name
+        path_to_file = event.src_path.split(filetype, 1)[0] + filetype
+        print("path to file", path_to_file)
 
-            sucessful_anonymization = False
+        sucessful_anonymization = False
 
+        # wait until the file is completly uploaded
+        while not os.path.exists(path_to_file):
+            time.sleep(1)
 
-            filetype = find_filetype(event.src_path)
-            print("filetype", filetype)
-
-            path_to_file = event.src_path.split(filetype, 1)[0] + filetype
-            print("path to file", path_to_file)
-
-            camera_folder = get_camera_folder(path_to_file)
-            print("camera_id", camera_folder)
-
-            picture_id = get_picture_id(path_to_file, camera_folder, filetype)
-            print("picture_id", picture_id)
-
-            an_path = get_path_for_anonymous_pic(anonymous_folder, camera_folder, picture_id, filetype)
-            print("path to anonymous file", an_path)
+        anonymize_picture(path_to_file, filetype)
 
 
-            face_detector = FaceDetector()
+# try anonymizing the picture
+def anonymize_picture(path_to_file, filetype):
+    try:
+        # todo : put face over face
+        camera_folder = get_camera_folder(path_to_file)
+        print("camera_id", camera_folder)
 
+        picture_id = get_picture_id(path_to_file, camera_folder, filetype)
+        print("picture_id", picture_id)
 
+        an_path = get_path_for_anonymous_pic(anonymous_folder, camera_folder, picture_id, filetype)
+        print("path to anonymous file", an_path)
 
-            print("reading image", path_to_file)
-            img = cv2.imread(path_to_file)
-            rgb_img = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
+        face_detector = FaceDetector()
 
-            if thresh:
-                bboxes = face_detector.predict(rgb_img, thresh)
-            else:
-                bboxes = face_detector.predict(rgb_img)
+        print("reading image", path_to_file)
+        img = cv2.imread(path_to_file)
+        rgb_img = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
 
-            # anonymize
-            if not bboxes == []:
-                try:
-                    print("bboxes containing face", bboxes)
+        if thresh:
+            bboxes = face_detector.predict(rgb_img, thresh)
+        else:
+            bboxes = face_detector.predict(rgb_img)
 
-                    print("creating anonymous picture")
-                    ann_img = annotate_image(img, bboxes)
+        # anonymize
+        if not bboxes == []:
+            try:
+                print("bboxes containing face", bboxes)
 
-                    print("write anonymized version to anonymous folder")
-                    cv2.imwrite(an_path, ann_img)
+                print("creating anonymous picture")
+                ann_img = annotate_image(img, bboxes)
 
-                    sucessful_anonymization = True
+                print("write anonymized version to anonymous folder")
+                cv2.imwrite(an_path, ann_img)
 
-                except Exception as ex:
-                    print(ex)
-                    print("Anonymizing failed")
-                    print("writing anonymized version failed")
-                    sucessful_anonymization = False
+                sucessful_anonymization = True
 
+            except Exception as ex:
+                print(ex)
+                print("Anonymizing failed")
+                print("writing anonymized version failed")
+                sucessful_anonymization = False
 
-                # delete original if sucessfully anonymized
-                if sucessful_anonymization:
-                    if os.path.exists(path_to_file):
-                        os.remove(path_to_file)
-                    else:
-                        print("Tried deleting, but the file does not exist", path_to_file)
-
-            # no faces found, picture is already anonymous
-            else:
-                print("no face found")
+            # delete original if successfully anonymized
+            if sucessful_anonymization:
                 if os.path.exists(path_to_file):
-                    os.rename(path_to_file, an_path)
+                    os.remove(path_to_file)
+                else:
+                    print("Tried deleting, but the file does not exist", path_to_file)
 
-            print("refreshing owncloud")
-            subprocess.call(cwd + "/refresh_nextcloud.sh", shell=True)
+        # no faces found, picture is already anonymous
+        else:
+            print("no face found")
+            if os.path.exists(path_to_file):
+                os.rename(path_to_file, an_path)
 
-        except Exception as e:
-            print(e)
-            print("Anonymizing failed")
+        print("refreshing owncloud")
+        subprocess.call(cwd + "/refresh_nextcloud.sh", shell=True)
+
+    except Exception as e:
+        print(e)
+        print("Anonymizing failed")
 
 
 # iterates over potential filetypes and returns the filetype if matched
@@ -118,6 +113,7 @@ def find_filetype(file_path):
             return filetype
 
     return None
+
 
 # filters the camera_id from filepath
 def get_camera_folder(file_path):
@@ -138,12 +134,14 @@ def get_picture_id(path_to_file, camera_folder, filetype):
 
     return picture_id
 
+
 def substract_from_string(long_string, substring):
+
     return long_string.replace(substring, '')
 
 
-def get_path_for_anonymous_pic(anonymous_folder, camera_id, picture_id, filetype):
-    return anonymous_folder + camera_id + '/' + picture_id + filetype
+def get_path_for_anonymous_pic(folder, camera_id, picture_id, filetype):
+    return folder + camera_id + '/' + picture_id + filetype
 
 
 if __name__ == "__main__":
