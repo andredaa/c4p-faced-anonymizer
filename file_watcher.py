@@ -81,7 +81,9 @@ class MyHandler(FileSystemEventHandler):
 
                     sucessful_anonymization = True
 
-                except:
+                except Exception as ex:
+                    print(ex)
+                    print("Anonymizing failed")
                     print("writing anonymized version failed")
                     sucessful_anonymization = False
 
