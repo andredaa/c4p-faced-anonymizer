@@ -22,7 +22,7 @@ class MyHandler(FileSystemEventHandler):
     # anonymize pictures, whenever there is a new picture in the wachtched folder
     def on_created(self, event):
         print(f'event type: {event.event_type}  path : {event.src_path}')
-        time.sleep(1)
+        time.sleep(2)
 
         try:
             # the "on_created" event is called by a partially upload file
@@ -38,6 +38,8 @@ class MyHandler(FileSystemEventHandler):
 
 
             filetype = find_filetype(event.src_path)
+            print("filetype", filetype)
+
             path_to_file = event.src_path.split(filetype, 1)[0] + filetype
             print("path to file", path_to_file)
 
@@ -48,12 +50,14 @@ class MyHandler(FileSystemEventHandler):
             print("picture_id", picture_id)
 
             an_path = get_path_for_anonymous_pic(anonymous_folder, camera_folder, picture_id, filetype)
+            print("path to anonymous file", an_path)
+
 
             face_detector = FaceDetector()
 
 
 
-            print("reading image")
+            print("reading image", path_to_file)
             img = cv2.imread(path_to_file)
             rgb_img = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
 
@@ -125,6 +129,7 @@ def get_picture_id(path_to_file, camera_id, filetype):
     picture_id = path_to_file
     for substring in [path_to_file, camera_id, filetype]:
         picture_id.replace(substring, '')
+        picture_id / var / nextcloud_data / c4p / files / camera_footage / raw_footage / camera_1 / faces2.png
 
     return picture_id
 
