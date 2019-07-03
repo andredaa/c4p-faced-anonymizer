@@ -127,7 +127,8 @@ def get_camera_folder(file_path):
 # substract all information but the picture_id from path_to_file
 def get_picture_id(path_to_file, camera_folder, filetype):
     picture_id = path_to_file
-    for substring in [watched_folder, camera_folder, filetype]:
+    for substring in [watched_folder, camera_folder, filetype, '/']:
+
         print("substring", substring)
         picture_id = substract_from_string(picture_id, substring)
         print("new picture id string", picture_id)
