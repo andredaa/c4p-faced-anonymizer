@@ -77,7 +77,7 @@ class MyHandler(FileSystemEventHandler):
                     ann_img = annotate_image(img, bboxes)
 
                     print("write anonymized version to anonymous folder")
-                    cv2.imwrite(an_path)
+                    cv2.imwrite(an_path, ann_img)
 
                     sucessful_anonymization = True
 
