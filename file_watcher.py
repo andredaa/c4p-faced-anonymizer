@@ -149,9 +149,10 @@ def get_path_for_anonymous_pic(folder, camera_id, picture_id, filetype):
 if __name__ == "__main__":
     print("File watching started")
     event_handler = MyHandler()
-    observer = Observer()
-    observer.schedule(event_handler, path=watched_folder, recursive=True)
-    observer.start()
+    for camera_id in range(1, 4):
+        observer = Observer()
+        observer.schedule(event_handler, path=watched_folder + '/camera_' + str(camera_id), recursive=True)
+        observer.start()
 
     try:
         while True:
