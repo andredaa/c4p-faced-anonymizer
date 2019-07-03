@@ -35,6 +35,7 @@ class MyHandler(FileSystemEventHandler):
 
         # wait until the file is completly uploaded
         while not os.path.exists(path_to_file):
+            print("waiting for upload to finish")
             time.sleep(1)
 
         anonymize_picture(path_to_file, filetype)
