@@ -31,20 +31,6 @@ class MyHandler(FileSystemEventHandler):
         path_to_file = event.src_path.split(filetype, 1)[0] + filetype
         print("path to file", path_to_file)
 
-        sucessful_anonymization = False
-
-        # wait until the file is completly uploaded
-        while not os.path.exists(path_to_file):
-            print("waiting for upload to finish")
-            time.sleep(1)
-
-        anonymize_picture(path_to_file, filetype)
-
-
-# try anonymizing the picture
-def anonymize_picture(path_to_file, filetype):
-    try:
-        # todo : put face over face
         camera_folder = get_camera_folder(path_to_file)
         print("camera_id", camera_folder)
 
@@ -54,6 +40,22 @@ def anonymize_picture(path_to_file, filetype):
         an_path = get_path_for_anonymous_pic(anonymous_folder, camera_folder, picture_id, filetype)
         print("path to anonymous file", an_path)
 
+        sucessful_anonymization = False
+
+        # wait until the file is completly uploaded
+        # sometimes a second picture seems to be anonymized in parallel script
+        while not os.path.exists(path_to_file) and not os.path.exists(an_path):
+            print("waiting for upload to finish")
+            time.sleep(1)
+
+        if os.path.exists(path_to_file):
+            anonymize_picture(path_to_file, filetype)
+
+
+# try anonymizing the picture
+def anonymize_picture(path_to_file, an_path):
+    try:
+        # todo : put face over face
         face_detector = FaceDetector()
 
         print("reading image", path_to_file)
@@ -97,8 +99,6 @@ def anonymize_picture(path_to_file, filetype):
             if os.path.exists(path_to_file):
                 os.rename(path_to_file, an_path)
 
-        print("refreshing owncloud")
-        subprocess.call(cwd + "/refresh_nextcloud.sh", shell=True)
 
     except Exception as e:
         print(e)
@@ -155,6 +155,7 @@ if __name__ == "__main__":
     try:
         while True:
             time.sleep(1)
+
     except KeyboardInterrupt:
         observer.stop()
     observer.join()
