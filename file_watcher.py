@@ -128,14 +128,15 @@ def get_camera_folder(file_path):
 def get_picture_id(path_to_file, camera_id, filetype):
     picture_id = path_to_file
     for substring in [path_to_file, camera_id, filetype]:
+        print(substring)
         picture_id.replace(substring, '')
-        picture_id / var / nextcloud_data / c4p / files / camera_footage / raw_footage / camera_1 / faces2.png
+        print(picture_id)
 
     return picture_id
 
 
 def get_path_for_anonymous_pic(anonymous_folder, camera_id, picture_id, filetype):
-    return anonymous_folder + '/' + camera_id + '/' + picture_id + filetype
+    return anonymous_folder + camera_id + '/' + picture_id + filetype
 
 
 if __name__ == "__main__":
