@@ -11,25 +11,25 @@ from faced import FaceDetector
 from faced.utils import annotate_image
 
 cwd = os.path.dirname(os.path.abspath(__file__))
-watched_folder = '/var/nextcloud_data/c4p/files/camera_footage/raw_footage/' # Please specify folder location
-anonymous_folder = '/var/nextcloud_data/c4p/files/camera_footage/anonymous_footage/' # Please specify folder location
+watched_folder = '/var/nextcloud_data/c4p/files/camera_footage/raw_footage/'  # Please specify folder location
+anonymous_folder = '/var/nextcloud_data/c4p/files/camera_footage/anonymous_footage/'  # Please specify folder location
 
 # Threshold for image analysis
 thresh = None
-
-
+face_count = 0
 
 
 class MyHandler(FileSystemEventHandler):
     # anonymize pictures, whenever there is a new picture in the wachtched folder
     def on_created(self, event):
+        global face_count
         print(f'event type: {event.event_type}  path : {event.src_path}')
         time.sleep(2)
 
         try:
             # the "on_created" event is called by a partially upload file
             # cut excess filename after '.png'
-            #/var/nextcloud_data/c4p/files/camera_footage/Ko-retina.png.ocTransferId1983807786.part
+            # /var/nextcloud_data/c4p/files/camera_footage/Ko-retina.png.ocTransferId1983807786.part
             # /camera_footage/camera_1/raw_footage
             # /camera_footage/camera_1/anonymized_footage
 
@@ -38,26 +38,22 @@ class MyHandler(FileSystemEventHandler):
 
             sucessful_anonymization = False
 
+            file_type = find_filetype(event.src_path)
+            print("filetype", file_type)
 
-            filetype = find_filetype(event.src_path)
-            print("filetype", filetype)
-
-            path_to_file = event.src_path.split(filetype, 1)[0] + filetype
+            path_to_file = event.src_path.split(file_type, 1)[0] + file_type
             print("path to file", path_to_file)
 
             camera_folder = get_camera_folder(path_to_file)
             print("camera_id", camera_folder)
 
-            picture_id = get_picture_id(path_to_file, camera_folder, filetype)
+            picture_id = get_picture_id(path_to_file, camera_folder, file_type)
             print("picture_id", picture_id)
 
-            an_path = get_path_for_anonymous_pic(anonymous_folder, camera_folder, picture_id, filetype)
+            an_path = get_path_for_anonymous_pic(anonymous_folder, camera_folder, picture_id, file_type)
             print("path to anonymous file", an_path)
 
-
             face_detector = FaceDetector()
-
-
 
             print("reading image", path_to_file)
             img = cv2.imread(path_to_file)
@@ -74,7 +70,8 @@ class MyHandler(FileSystemEventHandler):
                     print("bboxes containing face", bboxes)
 
                     print("creating anonymous picture")
-                    ann_img = annotate_image(img, bboxes)
+                    ann_img, count = annotate_image(img, bboxes, face_count)
+                    face_count = count
 
                     print("write anonymized version to anonymous folder")
                     cv2.imwrite(an_path, ann_img)
@@ -86,7 +83,6 @@ class MyHandler(FileSystemEventHandler):
                     print("Anonymizing failed")
                     print("writing anonymized version failed")
                     sucessful_anonymization = False
-
 
                 # delete original if sucessfully anonymized
                 if sucessful_anonymization:
@@ -119,6 +115,7 @@ def find_filetype(file_path):
 
     return None
 
+
 # filters the camera_id from filepath
 def get_camera_folder(file_path):
     for camera_id in range(1, 5):
@@ -139,12 +136,13 @@ def get_picture_id(path_to_file, camera_folder, filetype):
 
     return picture_id
 
+
 def substract_from_string(long_string, substring):
     return long_string.replace(substring, '')
 
 
-def get_path_for_anonymous_pic(anonymous_folder, camera_id, picture_id, filetype):
-    return anonymous_folder + camera_id + '/' + picture_id + filetype
+def get_path_for_anonymous_pic(an_folder, camera_id, picture_id, file_type):
+    return an_folder + camera_id + '/' + picture_id + file_type
 
 
 if __name__ == "__main__":

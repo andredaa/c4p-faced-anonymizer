@@ -20,12 +20,17 @@ def iou(bbox1, bbox2):
     return ret
 
 
-def annotate_image(frame, bboxes):
+def annotate_image(frame, bboxes, face_count):
     ret = frame[:]
 
     img_h, img_w, _ = frame.shape
 
     for x, y, w, h, p in bboxes:
+        face_count = face_count + 1
         cv2.rectangle(ret, (int(x - w/2), int(y - h/2)), (int(x + w/2), int(y + h/2)), (0, 255, 0), -1)
+        # write face_count on face
+        cv2.putText(ret, str(face_count), (x,y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2)
 
-    return ret
+    return ret, face_count
+
+
