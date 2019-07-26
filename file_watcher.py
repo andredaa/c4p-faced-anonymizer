@@ -98,7 +98,11 @@ class MyHandler(FileSystemEventHandler):
                     os.rename(path_to_file, an_path)
 
             print("refreshing owncloud")
-            subprocess.call(cwd + "/refresh_nextcloud.sh", shell=True)
+            try:
+                subprocess.call(cwd + "/refresh_nextcloud.sh", shell=True)
+            except Exception as ex:
+                print("refreshing failed")
+                print(ex)
 
         except Exception as e:
             print(e)
