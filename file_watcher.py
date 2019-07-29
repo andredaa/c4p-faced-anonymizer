@@ -161,10 +161,10 @@ if __name__ == "__main__":
     observer.schedule(event_handler, path=watched_folder, recursive=True)
     observer.start()
 
-    # try:
-    #     while True:
-    #         # TODO why?
-    #         time.sleep(1)
-    # except KeyboardInterrupt:
-    #     observer.stop()
+    try:
+        while True:
+          #  TODO why?
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
     observer.join()
