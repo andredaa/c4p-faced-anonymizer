@@ -4,6 +4,7 @@
 import time
 import subprocess
 import os
+import signal
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import cv2
@@ -16,6 +17,7 @@ anonymous_folder = '/var/nextcloud_data/c4p/files/camera_footage/anonymous_foota
 
 # Threshold for image analysis
 thresh = None
+counter = 0
 
 
 
@@ -24,7 +26,10 @@ class MyHandler(FileSystemEventHandler):
     # anonymize pictures, whenever there is a new picture in the wachtched folder
     def on_created(self, event):
         print(f'event type: {event.event_type}  path : {event.src_path}')
+        # let time pass to finish upload
         time.sleep(2)
+        global counter
+        counter = counter + 1
 
         try:
             # the "on_created" event is called by a partially upload file
@@ -33,11 +38,7 @@ class MyHandler(FileSystemEventHandler):
             # /camera_footage/camera_1/raw_footage
             # /camera_footage/camera_1/anonymized_footage
 
-            # todo : anonymizing more than 1 face
             # todo : put face over face
-
-            sucessful_anonymization = False
-
 
             filetype = find_filetype(event.src_path)
             print("filetype", filetype)
@@ -56,8 +57,6 @@ class MyHandler(FileSystemEventHandler):
 
 
             face_detector = FaceDetector()
-
-
 
             print("reading image", path_to_file)
             img = cv2.imread(path_to_file)
@@ -101,8 +100,16 @@ class MyHandler(FileSystemEventHandler):
                 if os.path.exists(path_to_file):
                     os.rename(path_to_file, an_path)
 
-            print("refreshing owncloud")
-            subprocess.call(cwd + "/refresh_nextcloud.sh", shell=True)
+            if counter == 10:
+                counter = 0
+                print("refreshing owncloud")
+                try:
+                    # The os.setsid() is passed in the argument preexec_fn so
+                    # it's run after the fork() and before  exec() to run the shell.
+                    pro = subprocess.Popen(cwd + "/refresh_nextcloud.sh", stdout=subprocess.PIPE,
+                                           shell=True, preexec_fn=os.setsid)
+                except:
+                    os.killpg(os.getpgid(pro.pid), signal.SIGTERM)  # Send the signal to all the process groups
 
         except Exception as e:
             print(e)
@@ -154,9 +161,10 @@ if __name__ == "__main__":
     observer.schedule(event_handler, path=watched_folder, recursive=True)
     observer.start()
 
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
+    # try:
+    #     while True:
+    #         # TODO why?
+    #         time.sleep(1)
+    # except KeyboardInterrupt:
+    #     observer.stop()
     observer.join()
