@@ -2,6 +2,7 @@
 # execute as www-data
 
 import time
+import datetime
 import subprocess
 import os
 import signal
@@ -59,7 +60,7 @@ class MyHandler(FileSystemEventHandler):
         picture_id = get_picture_id(path_to_file, camera_folder, file_type)
         #print("picture_id", picture_id)
 
-        an_path = get_path_for_anonymous_pic(anonymous_folder, camera_folder, picture_id, file_type)
+        an_path = get_path_for_anonymous_pic(camera_folder, picture_id, file_type)
         # print("path to anonymous file", an_path)
 
         face_detector = FaceDetector()
@@ -161,8 +162,18 @@ def substract_from_string(long_string, substring):
     return long_string.replace(substring, '')
 
 
-def get_path_for_anonymous_pic(anonymous_folder, camera_id, picture_id, filetype):
-    return anonymous_folder + camera_id + '/' + picture_id + filetype
+def get_path_for_anonymous_pic(camera_id, picture_id, file_type):
+    day = datetime.date.today()
+    date = day.strftime('%m') + '_' + day.strftime('%d')
+    date_directory = anonymous_folder + camera_id + '/' + date
+
+    try:
+        if not os.path.exists(date_directory):
+            os.makedirs(date_directory)
+    except OSError:
+        print('Error: Creating directory. ' + date_directory)
+
+    return anonymous_folder + camera_id + '/' + picture_id + file_type
 
 
 if __name__ == "__main__":
@@ -174,7 +185,6 @@ if __name__ == "__main__":
 
     try:
         while True:
-          #  TODO why?
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
