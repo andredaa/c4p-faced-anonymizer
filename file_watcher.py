@@ -8,6 +8,7 @@ import os
 import signal
 import shutil
 import cv2
+import csv
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -17,6 +18,7 @@ from faced.utils import annotate_image
 cwd = os.path.dirname(os.path.abspath(__file__))
 watched_folder = '/var/nextcloud_data/c4p/files/camera_footage/raw_footage/'  # Please specify folder location
 anonymous_folder = '/var/nextcloud_data/c4p/files/camera_footage/anonymous_footage/'  # Please specify folder location
+faces_csv = '/var/nextcloud_data/c4p/files/camera_footage/anonymous_footage/face_positions.csv'  # Please specify folder location
 
 # Threshold for image analysis
 thresh = None
@@ -60,7 +62,7 @@ class MyHandler(FileSystemEventHandler):
         picture_id = get_picture_id(path_to_file, camera_folder, file_type)
         #print("picture_id", picture_id)
 
-        an_path = get_path_for_anonymous_pic(camera_folder, picture_id, file_type)
+        an_path = get_path_for_anonymous_folder(camera_folder) + '/' + picture_id + file_type
         # print("path to anonymous file", an_path)
 
         face_detector = FaceDetector()
@@ -92,6 +94,8 @@ class MyHandler(FileSystemEventHandler):
 
                 successful_anonymization = True
 
+                save_bboxes_to_csv(camera_folder, picture_id, bboxes)
+
             except Exception as ex:
                 print(ex)
                 print("Anonymizing failed")
@@ -121,6 +125,29 @@ class MyHandler(FileSystemEventHandler):
                                        shell=True, preexec_fn=os.setsid)
             except:
                 os.killpg(os.getpgid(pro.pid), signal.SIGTERM)  # Send the signal to all the process groups
+
+
+def save_bboxes_to_csv(camera_folder, picture_id, bboxes):
+    an_folder = get_path_for_anonymous_folder(camera_folder)
+    csv_row = [camera_folder, picture_id]
+
+    if not os.path.exists(an_folder + '/face_positions.csv'):
+        init_face_positions_csv(an_folder)
+
+    for bbox in bboxes:
+        for coordinate in bbox:
+            csv_row.append(coordinate)
+        with open(an_folder + '/face_positions.csv', "a", newline='') as f:
+            writer = csv.writer(f, delimiter=',')
+            writer.writerow(csv_row)
+
+
+def init_face_positions_csv(an_folder):
+    header = ['camera', 'picture', 'bbox_coord_0', 'bbox_coord_1', 'bbox_coord_2', 'bbox_coord_3']
+
+    with open(an_folder + '/face_positions.csv', "w", newline='') as f:
+        writer = csv.writer(f, delimiter=',')
+        writer.writerow(header)  # write the header
 
 
 def crop_img(img):
@@ -162,10 +189,10 @@ def substract_from_string(long_string, substring):
     return long_string.replace(substring, '')
 
 
-def get_path_for_anonymous_pic(camera_id, picture_id, file_type):
+def get_path_for_anonymous_folder(camera_folder_name):
     day = datetime.date.today()
     date = day.strftime('%m') + '_' + day.strftime('%d')
-    date_directory = anonymous_folder + camera_id + '/' + date
+    date_directory = anonymous_folder + camera_folder_name + '/' + date
 
     try:
         if not os.path.exists(date_directory):
@@ -173,7 +200,7 @@ def get_path_for_anonymous_pic(camera_id, picture_id, file_type):
     except OSError:
         print('Error: Creating directory. ' + date_directory)
 
-    return anonymous_folder + camera_id + '/' + picture_id + file_type
+    return anonymous_folder + camera_folder_name
 
 
 if __name__ == "__main__":
