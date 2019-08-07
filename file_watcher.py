@@ -53,6 +53,7 @@ class MyHandler(FileSystemEventHandler):
                 return
 
         camera_folder = get_camera_folder(path_to_file)
+
         #print("camera_id", camera_folder)
 
         picture_id = get_picture_id(path_to_file, camera_folder, file_type)
@@ -65,6 +66,10 @@ class MyHandler(FileSystemEventHandler):
 
         # print("reading image", path_to_file)
         img = cv2.imread(path_to_file)
+        # crop picture for camera 1 to cut off unnecessary parts of the imagae
+        if camera_folder == 'camera_1':
+            img = crop_img(path_to_file)
+
         rgb_img = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
 
         if thresh:
@@ -115,6 +120,12 @@ class MyHandler(FileSystemEventHandler):
                                        shell=True, preexec_fn=os.setsid)
             except:
                 os.killpg(os.getpgid(pro.pid), signal.SIGTERM)  # Send the signal to all the process groups
+
+
+def crop_img(img):
+    height, width = img.shape[:2]
+
+    return img[int(height / 1.75):height, 0:width]
 
 
 # iterates over potential filetypes and returns the filetype if matched
