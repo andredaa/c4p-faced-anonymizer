@@ -71,7 +71,7 @@ class MyHandler(FileSystemEventHandler):
         img = cv2.imread(path_to_file)
         # crop picture for camera 1 to cut off unnecessary parts of the imagae
         if camera_folder == 'camera_1':
-            img = crop_img(path_to_file)
+            img = crop_img(img)
 
         rgb_img = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
 
