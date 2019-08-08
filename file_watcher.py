@@ -113,7 +113,6 @@ class MyHandler(FileSystemEventHandler):
             print("no face found")
             if os.path.exists(path_to_file):
                 os.rename(path_to_file, an_path)
-                shutil.move(path_to_file, an_path)
 
         if counter == 10:
             counter = 0
