@@ -31,99 +31,105 @@ class MyHandler(FileSystemEventHandler):
         print(f'event type: {event.event_type}  path : {event.src_path}')
         # let time pass to finish upload
         time.sleep(2)
+
         global counter
         counter = counter + 1
 
-         # todo : put face over face
+        try:
 
-        file_type = find_filetype(event.src_path)
-        print("file_type", file_type)
+             # todo : put face over face
 
-        # the "on_created" event is called by a partially upload file
-        # cut excess filename after '.png'
-        path_to_file = event.src_path.split(file_type, 1)[0] + file_type
-        print("path to file", path_to_file)
+            file_type = find_filetype(event.src_path)
+            print("file_type", file_type)
 
-        # check if the file is already upload entirely
-        tries_to_reach_file = 0
-        while not os.path.exists(path_to_file):
-            tries_to_reach_file = tries_to_reach_file + 1
-            time.sleep(1)
-            if tries_to_reach_file > 10:
-                print("file does not exit")
-                print(path_to_file)
+            # the "on_created" event is called by a partially upload file
+            # cut excess filename after '.png'
+            path_to_file = event.src_path.split(file_type, 1)[0] + file_type
+            print("path to file", path_to_file)
 
-                return
+            # check if the file is already upload entirely
+            tries_to_reach_file = 0
+            while not os.path.exists(path_to_file):
+                tries_to_reach_file = tries_to_reach_file + 1
+                time.sleep(1)
+                if tries_to_reach_file > 10:
+                    print("file does not exit")
+                    print(path_to_file)
 
-        camera_folder = get_camera_folder(path_to_file)
+                    return
 
-        #print("camera_id", camera_folder)
+            camera_folder = get_camera_folder(path_to_file)
 
-        picture_id = get_picture_id(path_to_file, camera_folder, file_type)
-        #print("picture_id", picture_id)
+            #print("camera_id", camera_folder)
 
-        an_path = get_path_for_anonymous_folder(camera_folder) + '/' + picture_id + file_type
-        # print("path to anonymous file", an_path)
+            picture_id = get_picture_id(path_to_file, camera_folder, file_type)
+            #print("picture_id", picture_id)
 
-        face_detector = FaceDetector()
+            an_path = get_path_for_anonymous_folder(camera_folder) + '/' + picture_id + file_type
+            # print("path to anonymous file", an_path)
 
-        # print("reading image", path_to_file)
-        img = cv2.imread(path_to_file)
-        # crop picture for camera 1 to cut off unnecessary parts of the imagae
-        if camera_folder == 'camera_1':
-            img = crop_img(img)
+            face_detector = FaceDetector()
 
-        rgb_img = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
+            # print("reading image", path_to_file)
+            img = cv2.imread(path_to_file)
+            # crop picture for camera 1 to cut off unnecessary parts of the imagae
+            if camera_folder == 'camera_1':
+                print("cropping image")
+                img = crop_img(img)
 
-        if thresh:
-            bboxes = face_detector.predict(rgb_img, thresh)
-        else:
-            bboxes = face_detector.predict(rgb_img)
+            rgb_img = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
 
-        # anonymize picture
-        if not bboxes == []:
-            try:
-                # TODO save bboxes per picture in csv
-                print("bboxes containing face", bboxes)
+            if thresh:
+                bboxes = face_detector.predict(rgb_img, thresh)
+            else:
+                bboxes = face_detector.predict(rgb_img)
 
-                print("creating anonymous picture")
-                ann_img = annotate_image(img, bboxes)
+            # anonymize picture
+            if not bboxes == []:
+                try:
+                    # TODO save bboxes per picture in csv
+                    print("bboxes containing face", bboxes)
 
-                print("write anonymized version to anonymous folder")
-                cv2.imwrite(an_path, ann_img)
+                    print("creating anonymous picture")
+                    ann_img = annotate_image(img, bboxes)
 
-                successful_anonymization = True
+                    print("write anonymized version to anonymous folder")
+                    cv2.imwrite(an_path, ann_img)
 
-                save_bboxes_to_csv(camera_folder, picture_id, bboxes)
+                    successful_anonymization = True
 
-            except Exception as ex:
-                print(ex)
-                print("Anonymizing failed")
-                successful_anonymization = False
+                    save_bboxes_to_csv(camera_folder, picture_id, bboxes)
 
-            # delete original if successfully anonymized
-            if successful_anonymization:
-                os.remove(path_to_file)
-            # else:
-            #     os.rename(path_to_file, an_path)
-            #     shutil.move(path_to_file, an_path)
+                except Exception as ex:
+                    print(ex)
+                    print("Anonymizing failed")
+                    successful_anonymization = False
 
-        # no faces found, picture is already anonymous
-        else:
-            print("no face found")
-            if os.path.exists(path_to_file):
-                os.rename(path_to_file, an_path)
+                # delete original if successfully anonymized
+                if successful_anonymization:
+                    os.remove(path_to_file)
+                # else:
+                #     os.rename(path_to_file, an_path)
+                #     shutil.move(path_to_file, an_path)
 
-        if counter == 10:
-            counter = 0
-            print("refreshing owncloud")
-            try:
-                # The os.setsid() is passed in the argument preexec_fn so
-                # it's run after the fork() and before  exec() to run the shell.
-                pro = subprocess.Popen(cwd + "/refresh_nextcloud.sh", stdout=subprocess.PIPE,
-                                       shell=True, preexec_fn=os.setsid)
-            except:
-                os.killpg(os.getpgid(pro.pid), signal.SIGTERM)  # Send the signal to all the process groups
+            # no faces found, picture is already anonymous
+            else:
+                print("no face found")
+                if os.path.exists(path_to_file):
+                    os.rename(path_to_file, an_path)
+
+            if counter == 10:
+                counter = 0
+                print("refreshing owncloud")
+                try:
+                    # The os.setsid() is passed in the argument preexec_fn so
+                    # it's run after the fork() and before  exec() to run the shell.
+                    pro = subprocess.Popen(cwd + "/refresh_nextcloud.sh", stdout=subprocess.PIPE,
+                                           shell=True, preexec_fn=os.setsid)
+                except:
+                    os.killpg(os.getpgid(pro.pid), signal.SIGTERM)  # Send the signal to all the process groups
+        except:
+            print("Error after picture upload")
 
 
 def save_bboxes_to_csv(camera_folder, picture_id, bboxes):
