@@ -36,9 +36,6 @@ class MyHandler(FileSystemEventHandler):
         counter = counter + 1
 
         try:
-
-             # todo : put face over face
-
             file_type = find_filetype(event.src_path)
             print("file_type", file_type)
 
@@ -59,16 +56,8 @@ class MyHandler(FileSystemEventHandler):
                     return
 
             camera_folder = get_camera_folder(path_to_file)
-
-            #print("camera_id", camera_folder)
-
             picture_id = get_picture_id(path_to_file, camera_folder, file_type)
-            #print("picture_id", picture_id)
-
             an_path = get_path_for_anonymous_folder(camera_folder) + '/' + picture_id + file_type
-            # print("path to anonymous file", an_path)
-
-            face_detector = FaceDetector()
 
             # print("reading image", path_to_file)
             img = cv2.imread(path_to_file)
@@ -77,8 +66,9 @@ class MyHandler(FileSystemEventHandler):
                 print("cropping image")
                 img = crop_img(img)
 
+            # iniate face detection
             rgb_img = cv2.cvtColor(img.copy(), cv2.COLOR_BGR2RGB)
-
+            face_detector = FaceDetector()
             if thresh:
                 bboxes = face_detector.predict(rgb_img, thresh)
             else:
@@ -87,48 +77,35 @@ class MyHandler(FileSystemEventHandler):
             # anonymize picture
             if not bboxes == []:
                 try:
-                    # TODO save bboxes per picture in csv
                     print("bboxes containing face", bboxes)
-
                     print("creating anonymous picture")
-                    ann_img = annotate_image(img, bboxes)
-
-                    print("write anonymized version to anonymous folder")
-                    cv2.imwrite(an_path, ann_img)
-
-                    successful_anonymization = True
-
+                    img = annotate_image(img, bboxes)
                     save_bboxes_to_csv(camera_folder, picture_id, bboxes)
 
                 except Exception as ex:
                     print(ex)
                     print("Anonymizing failed")
-                    successful_anonymization = False
-
-                # delete original if successfully anonymized
-                if successful_anonymization:
-                    os.remove(path_to_file)
-                # else:
-                #     os.rename(path_to_file, an_path)
-                #     shutil.move(path_to_file, an_path)
 
             # no faces found, picture is already anonymous
             else:
                 print("no face found")
-                if os.path.exists(path_to_file):
-                    os.rename(path_to_file, an_path)
 
+            # move file to anonym folder
+            cv2.imwrite(an_path, img)
+            # remove original
+            os.remove(path_to_file)
+
+            # refreshing nextcloud after 10 pictures
             if counter == 10:
                 counter = 0
-                print("refreshing owncloud")
+                print("refreshing nextcloud")
                 try:
-                    # The os.setsid() is passed in the argument preexec_fn so
-                    # it's run after the fork() and before  exec() to run the shell.
                     pro = subprocess.Popen(cwd + "/refresh_nextcloud.sh", stdout=subprocess.PIPE,
                                            shell=True, preexec_fn=os.setsid)
                 except:
                     os.killpg(os.getpgid(pro.pid), signal.SIGTERM)  # Send the signal to all the process groups
-        except:
+        except Exception as exc:
+            print(exc)
             print("Error after picture upload")
 
 
