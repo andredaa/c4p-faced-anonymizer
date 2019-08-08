@@ -191,15 +191,15 @@ def substract_from_string(long_string, substring):
 def get_path_for_anonymous_folder(camera_folder_name):
     day = datetime.date.today()
     date = day.strftime('%m') + '_' + day.strftime('%d')
-    date_directory = anonymous_folder + camera_folder_name + '/' + date
+    an_directory_with_date = anonymous_folder + camera_folder_name + '/' + date
 
     try:
-        if not os.path.exists(date_directory):
-            os.makedirs(date_directory)
+        if not os.path.exists(an_directory_with_date):
+            os.makedirs(an_directory_with_date)
     except OSError:
-        print('Error: Creating directory. ' + date_directory)
+        print('Error: Creating directory. ' + an_directory_with_date)
 
-    return anonymous_folder + camera_folder_name
+    return an_directory_with_date
 
 
 if __name__ == "__main__":
